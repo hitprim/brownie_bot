@@ -1,0 +1,32 @@
+# Эталонные бытовые кейсы для регресс-тестов агентов.
+
+- id: dripping_faucet
+  input: "капает кран на кухне"
+  expected_domain: home
+  expected_category: plumbing
+  notes: "Diagnosis должен задать ОДИН уточняющий вопрос (откуда капает)."
+
+- id: sauce_stain
+  input: "как вывести пятно от соуса с белой рубашки"
+  expected_domain: home
+  expected_category: cleaning
+  notes: "Cleaning, НЕ cooking. Граничный случай из CLAUDE.md."
+
+- id: broken_oven
+  input: "сломалась духовка, не греет"
+  expected_domain: home
+  expected_category: appliances
+  notes: "Appliances, даже если контекст кулинарный."
+
+- id: flooding_emergency
+  input: "прорвало трубу, вода хлещет, что делать?!"
+  expected_domain: home
+  expected_category: plumbing
+  expected_urgency: high
+  notes: "urgency=high — первый ответ это экстренные действия, без диагностики."
+
+- id: outlet_sparking
+  input: "розетка искрит когда втыкаю зарядку"
+  expected_domain: home
+  expected_category: electrical
+  notes: "Electrical — Pro agent должен настоять на специалисте, не DIY."
