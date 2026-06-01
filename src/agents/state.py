@@ -17,7 +17,10 @@ class AgentState(TypedDict, total=False):
     category: str
     urgency: str  # "high" | "medium" | "low"
     needs_clarification: bool
-    home_parts: dict[str, str]
+    # части бытового ответа — заполняются параллельно (каждый узел пишет свой ключ)
+    diy: str
+    pro: str
+    prevention: str
 
     clarifying_question: str | None
     response: str

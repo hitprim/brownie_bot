@@ -1,6 +1,7 @@
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.bot.processing import process_message
 from src.db.models import User
@@ -15,6 +16,7 @@ async def handle_text(
     state: FSMContext,
     user: User,
     user_dto: UserDTO,
+    session: AsyncSession,
 ) -> None:
     await process_message(
         message,
@@ -22,5 +24,6 @@ async def handle_text(
         user=user,
         user_dto=user_dto,
         state=state,
+        session=session,
         is_voice=False,
     )

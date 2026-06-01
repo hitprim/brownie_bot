@@ -6,7 +6,6 @@ from langgraph.graph import END, StateGraph
 from src.agents.cooking.inventory import inventory_node
 from src.agents.cooking.preference import preference_node
 from src.agents.cooking.recipe import recipe_node
-from src.agents.cooking.substitution import substitution_node
 from src.agents.home.classifier import classifier_node
 from src.agents.home.diagnosis import diagnosis_node, route_after_diagnosis
 from src.agents.home.diy import diy_node
@@ -45,13 +44,15 @@ def _build_main_graph():
     g.add_edge("recipe", END)
 
     g.add_edge("classifier", "diagnosis")
+    # fan-out: после диагностики три агента работают параллельно
     g.add_conditional_edges(
         "diagnosis",
         route_after_diagnosis,
-        {"clarify": END, "solve": "diy"},
+        ["diy", "pro", "prevention", END],
     )
-    g.add_edge("diy", "pro")
-    g.add_edge("pro", "prevention")
+    # fan-in: assemble_home ждёт завершения всех трёх
+    g.add_edge("diy", "assemble_home")
+    g.add_edge("pro", "assemble_home")
     g.add_edge("prevention", "assemble_home")
     g.add_edge("assemble_home", END)
 
@@ -77,14 +78,3 @@ async def run_agents(
         "history": history or [],
     }
     return await graph.ainvoke(initial)
-
-
-async def run_cooking_followup(
-    text: str,
-    *,
-    history: list[dict[str, str]] | None = None,
-) -> str:
-    """Follow-up в кулинарном диалоге (например, вопрос про замену продукта)."""
-    state: AgentState = {"text": text, "history": history or []}
-    result = await substitution_node(state)
-    return result["response"]

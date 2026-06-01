@@ -8,12 +8,14 @@ from fastapi.responses import JSONResponse
 from src.bot.setup import get_bot, get_dispatcher
 from src.config import settings
 from src.db.session import dispose_engine
+from src.tracing import setup_tracing
 
 logging.basicConfig(
     level=settings.log_level,
     format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
 )
 logger = logging.getLogger("domovoy")
+setup_tracing()
 
 
 @asynccontextmanager
@@ -23,7 +25,7 @@ async def lifespan(app: FastAPI):
         url=settings.webhook_url,
         secret_token=settings.webhook_secret,
         drop_pending_updates=True,
-        allowed_updates=["message"],
+        allowed_updates=["message", "callback_query"],
     )
     logger.info("Webhook set: %s", settings.webhook_url)
     yield

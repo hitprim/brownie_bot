@@ -1,5 +1,7 @@
 import logging
 
+from langgraph.graph import END
+
 from src.agents.state import AgentState
 from src.llm import LLMMessage, get_llm
 from src.llm.prompts import load_prompt
@@ -41,6 +43,8 @@ async def diagnosis_node(state: AgentState) -> AgentState:
     return state
 
 
-def route_after_diagnosis(state: AgentState) -> str:
-    """Если нужен вопрос — заканчиваем, иначе идём в DIY."""
-    return "clarify" if state.get("needs_clarification") else "solve"
+def route_after_diagnosis(state: AgentState):
+    """Если нужен вопрос — заканчиваем, иначе запускаем DIY/Pro/Prevention параллельно."""
+    if state.get("needs_clarification"):
+        return END
+    return ["diy", "pro", "prevention"]

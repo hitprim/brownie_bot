@@ -8,12 +8,14 @@ import logging
 from src.bot.setup import get_bot, get_dispatcher
 from src.config import settings
 from src.db.session import dispose_engine
+from src.tracing import setup_tracing
 
 logging.basicConfig(
     level=settings.log_level,
     format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
 )
 logger = logging.getLogger("domovoy.dev")
+setup_tracing()
 
 
 async def main() -> None:
@@ -23,7 +25,7 @@ async def main() -> None:
     await bot.delete_webhook(drop_pending_updates=True)
     logger.info("Starting polling (dev mode)")
     try:
-        await dp.start_polling(bot, allowed_updates=["message"])
+        await dp.start_polling(bot, allowed_updates=["message", "callback_query"])
     finally:
         await bot.session.close()
         await dispose_engine()

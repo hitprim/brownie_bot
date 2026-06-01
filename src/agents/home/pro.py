@@ -18,6 +18,5 @@ async def pro_node(state: AgentState) -> AgentState:
         LLMMessage(role="system", content=load_prompt("home/pro")),
         LLMMessage(role="user", content=context),
     ]
-    parts = state.setdefault("home_parts", {})
-    parts["pro"] = await llm.complete(messages, temperature=0.3)
-    return state
+    text = await llm.complete(messages, temperature=0.3)
+    return {"pro": text}

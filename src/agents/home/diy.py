@@ -19,6 +19,5 @@ async def diy_node(state: AgentState) -> AgentState:
         LLMMessage(role="system", content=load_prompt("home/diy")),
         LLMMessage(role="user", content=context),
     ]
-    parts = state.setdefault("home_parts", {})
-    parts["diy"] = await llm.complete(messages, temperature=0.4)
-    return state
+    text = await llm.complete(messages, temperature=0.4)
+    return {"diy": text}

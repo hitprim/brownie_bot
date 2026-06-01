@@ -2,14 +2,17 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from aiogram import BaseMiddleware
-from aiogram.types import Message, TelegramObject
+from aiogram.types import CallbackQuery, Message, TelegramObject
 
 from src.db.session import async_session_factory
 from src.services.user_service import UserService
 
 
 class UserMiddleware(BaseMiddleware):
-    """Создаёт/обновляет юзера в БД и кладёт session + user в data хендлера."""
+    """Создаёт/обновляет юзера в БД и кладёт session + user в data хендлера.
+
+    Работает и для сообщений, и для нажатий inline-кнопок (callback query).
+    """
 
     async def __call__(
         self,
@@ -17,7 +20,7 @@ class UserMiddleware(BaseMiddleware):
         event: TelegramObject,
         data: dict[str, Any],
     ) -> Any:
-        if not isinstance(event, Message) or event.from_user is None:
+        if not isinstance(event, Message | CallbackQuery) or event.from_user is None:
             return await handler(event, data)
 
         tg = event.from_user

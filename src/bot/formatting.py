@@ -22,3 +22,46 @@ def telegram_html(text: str) -> str:
     # markdown-маркеры списка '* '/'+ ' → обычное тире
     text = _BULLET.sub(r"\1• ", text)
     return text
+
+
+TELEGRAM_LIMIT = 4096
+
+
+def split_for_telegram(text: str, limit: int = TELEGRAM_LIMIT) -> list[str]:
+    """Режет длинный текст на части под лимит Telegram, по границам абзацев/строк.
+
+    Простые инлайн-теги (<b>, <i>) не переносятся между абзацами, поэтому
+    деление по '\\n\\n' и '\\n' не разрывает разметку.
+    """
+    if len(text) <= limit:
+        return [text]
+
+    chunks: list[str] = []
+    current = ""
+    for block in text.split("\n\n"):
+        candidate = f"{current}\n\n{block}" if current else block
+        if len(candidate) <= limit:
+            current = candidate
+            continue
+        if current:
+            chunks.append(current)
+            current = ""
+        # сам блок длиннее лимита — режем по строкам
+        if len(block) <= limit:
+            current = block
+            continue
+        for line in block.split("\n"):
+            cand = f"{current}\n{line}" if current else line
+            if len(cand) <= limit:
+                current = cand
+            else:
+                if current:
+                    chunks.append(current)
+                # строка всё ещё длиннее лимита — режем жёстко
+                while len(line) > limit:
+                    chunks.append(line[:limit])
+                    line = line[limit:]
+                current = line
+    if current:
+        chunks.append(current)
+    return chunks

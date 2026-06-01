@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import desc, select
+from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.db.models import Conversation, Message
@@ -58,6 +58,20 @@ class ConversationRepository:
         conversation.messages_count += 1
         await self.session.flush()
         return message
+
+    async def count_user_messages_since(self, user_id: int, since: datetime) -> int:
+        """Сколько сообщений пользователь отправил с момента `since` (для лимитов)."""
+        result = await self.session.execute(
+            select(func.count())
+            .select_from(Message)
+            .join(Conversation, Message.conversation_id == Conversation.id)
+            .where(
+                Conversation.user_id == user_id,
+                Message.role == "user",
+                Message.created_at >= since,
+            )
+        )
+        return int(result.scalar_one())
 
     async def recent_messages(self, conversation_id: int, limit: int = 10) -> list[Message]:
         result = await self.session.execute(

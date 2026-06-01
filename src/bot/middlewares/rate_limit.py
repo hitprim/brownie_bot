@@ -1,22 +1,21 @@
 from collections.abc import Awaitable, Callable
-from datetime import date
+from datetime import UTC, datetime, time
 from typing import Any
 
 from aiogram import BaseMiddleware
 from aiogram.types import Message, TelegramObject
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.db.models import User
+from src.db.repositories.conversation_repo import ConversationRepository
 from src.services.config_service import DEFAULTS
 
 
 class RateLimitMiddleware(BaseMiddleware):
-    """Простой дневной лимит запросов на пользователя (in-memory).
+    """Дневной лимит запросов на пользователя. Считает сообщения за сегодня по БД.
 
-    v0.1: счётчик в памяти процесса. При горизонтальном масштабировании
-    нужно вынести в БД/Redis.
+    Работает на сессии и юзере, которые кладёт UserMiddleware (регистрируется раньше).
     """
-
-    def __init__(self) -> None:
-        self._counters: dict[int, tuple[date, int]] = {}
 
     async def __call__(
         self,
@@ -31,12 +30,16 @@ class RateLimitMiddleware(BaseMiddleware):
         if event.text and event.text.startswith("/"):
             return await handler(event, data)
 
+        session: AsyncSession | None = data.get("session")
+        user: User | None = data.get("user")
+        if session is None or user is None:
+            return await handler(event, data)
+
         limit = DEFAULTS["free_requests_per_day"]
-        today = date.today()
-        user_id = event.from_user.id
-        stored_date, count = self._counters.get(user_id, (today, 0))
-        if stored_date != today:
-            count = 0
+        start_of_day = datetime.combine(datetime.now(UTC).date(), time.min, tzinfo=UTC)
+        count = await ConversationRepository(session).count_user_messages_since(
+            user.id, start_of_day
+        )
 
         if count >= limit:
             await event.answer(
@@ -45,5 +48,4 @@ class RateLimitMiddleware(BaseMiddleware):
             )
             return None
 
-        self._counters[user_id] = (today, count + 1)
         return await handler(event, data)

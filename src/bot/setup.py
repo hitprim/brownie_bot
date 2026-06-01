@@ -23,7 +23,7 @@ def get_dispatcher() -> Dispatcher:
 
 
 def _register(dp: Dispatcher) -> None:
-    from src.bot.handlers import start, text, voice
+    from src.bot.handlers import callbacks, start, text, voice
     from src.bot.middlewares.logging import LoggingMiddleware
     from src.bot.middlewares.rate_limit import RateLimitMiddleware
     from src.bot.middlewares.user import UserMiddleware
@@ -31,7 +31,9 @@ def _register(dp: Dispatcher) -> None:
     dp.update.middleware(LoggingMiddleware())
     dp.message.middleware(UserMiddleware())
     dp.message.middleware(RateLimitMiddleware())
+    dp.callback_query.middleware(UserMiddleware())
 
     dp.include_router(start.router)
     dp.include_router(voice.router)
+    dp.include_router(callbacks.router)
     dp.include_router(text.router)

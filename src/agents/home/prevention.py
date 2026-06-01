@@ -18,20 +18,15 @@ async def prevention_node(state: AgentState) -> AgentState:
         LLMMessage(role="system", content=load_prompt("home/prevention")),
         LLMMessage(role="user", content=context),
     ]
-    parts = state.setdefault("home_parts", {})
-    parts["prevention"] = await llm.complete(messages, temperature=0.4)
-    return state
+    text = await llm.complete(messages, temperature=0.4)
+    return {"prevention": text}
 
 
 async def assemble_home_node(state: AgentState) -> AgentState:
-    """Собирает DIY + Pro + Prevention в один ответ пользователю."""
-    parts = state.get("home_parts", {})
-    blocks: list[str] = []
-    if parts.get("diy"):
-        blocks.append(parts["diy"].strip())
-    if parts.get("pro"):
-        blocks.append(parts["pro"].strip())
-    if parts.get("prevention"):
-        blocks.append(parts["prevention"].strip())
-    state["response"] = "\n\n".join(blocks)
-    return state
+    """Собирает DIY + Pro + Prevention (заполненные параллельно) в один ответ."""
+    blocks = [
+        state.get("diy", "").strip(),
+        state.get("pro", "").strip(),
+        state.get("prevention", "").strip(),
+    ]
+    return {"response": "\n\n".join(b for b in blocks if b)}

@@ -3,6 +3,7 @@ import logging
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.bot.processing import process_message
 from src.bot.setup import get_bot
@@ -22,6 +23,7 @@ async def handle_voice(
     state: FSMContext,
     user: User,
     user_dto: UserDTO,
+    session: AsyncSession,
 ) -> None:
     bot = get_bot()
     await message.bot.send_chat_action(message.chat.id, "typing")
@@ -45,5 +47,6 @@ async def handle_voice(
         user=user,
         user_dto=user_dto,
         state=state,
+        session=session,
         is_voice=True,
     )
