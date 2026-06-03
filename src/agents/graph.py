@@ -69,6 +69,7 @@ async def run_agents(
     *,
     user_prefs: dict[str, Any] | None = None,
     history: list[dict[str, str]] | None = None,
+    memory_facts: str = "",
 ) -> AgentState:
     """Прогоняет запрос через главный граф. Возвращает финальный state."""
     graph = get_graph()
@@ -76,5 +77,6 @@ async def run_agents(
         "text": text,
         "user_prefs": user_prefs or {},
         "history": history or [],
+        "memory_facts": memory_facts,
     }
     return await graph.ainvoke(initial)

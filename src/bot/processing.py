@@ -12,6 +12,7 @@ from src.bot.keyboards import answer_keyboard
 from src.bot.states import ConversationStates
 from src.db.models import User
 from src.domain.user import UserDTO
+from src.memory import get_memory, memory_block
 from src.services.conversation_service import ConversationService
 
 logger = logging.getLogger("domovoy.bot")
@@ -42,16 +43,24 @@ async def process_message(
         return
 
     user_id = user.id
+    mem_id = str(user.telegram_id)
     current = await state.get_state()
     conv = ConversationService(session)
     await conv.record_user_message(user_id, text, is_voice=is_voice)
     history = await conv.history(user_id, limit=10)
 
+    memory = get_memory()
+    memory_facts = memory_block(await memory.search(mem_id, text)) if memory else ""
+
     try:
         async with ChatActionSender.typing(bot=message.bot, chat_id=message.chat.id):
             if current in _FOLLOWUP_STATES:
                 domain = _FOLLOWUP_STATES[current]
-                response = (await run_followup(text, domain=domain, history=history)).strip()
+                response = (
+                    await run_followup(
+                        text, domain=domain, history=history, memory_facts=memory_facts
+                    )
+                ).strip()
                 next_state = (
                     ConversationStates.home_answering
                     if domain == "home"
@@ -62,6 +71,7 @@ async def process_message(
                     text,
                     user_prefs=user_dto.preferences.model_dump(),
                     history=history,
+                    memory_facts=memory_facts,
                 )
                 response = result.get("response", "").strip()
                 domain = result.get("domain", "unclear")
@@ -100,4 +110,14 @@ async def process_message(
         await message.answer(
             chunk,
             reply_markup=keyboard if i == len(chunks) - 1 else None,
+        )
+
+    # сохраняем диалог в долговременную память (mem0 сам извлечёт факты)
+    if memory:
+        await memory.add(
+            mem_id,
+            [
+                {"role": "user", "content": text},
+                {"role": "assistant", "content": response},
+            ],
         )

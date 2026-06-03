@@ -20,8 +20,11 @@ async def recipe_node(state: AgentState) -> AgentState:
         f"Исходный запрос: {state['text']}"
     )
 
+    system = load_prompt("cooking/recipe")
+    if state.get("memory_facts"):
+        system = f"{system}\n\n{state['memory_facts']}"
     messages = [
-        LLMMessage(role="system", content=load_prompt("cooking/recipe")),
+        LLMMessage(role="system", content=system),
         LLMMessage(role="user", content=context),
     ]
     state["response"] = await llm.complete(messages, temperature=0.6)

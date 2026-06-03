@@ -11,6 +11,7 @@ async def run_followup(
     *,
     domain: str,
     history: list[dict[str, str]] | None = None,
+    memory_facts: str = "",
 ) -> str:
     """Контекстный follow-up в уже идущем диалоге (кулинария или быт).
 
@@ -21,9 +22,12 @@ async def run_followup(
     history = history or []
     history_text = "\n".join(f"{m['role']}: {m['content']}" for m in history)
 
+    system = load_prompt(prompt_name)
+    if memory_facts:
+        system = f"{system}\n\n{memory_facts}"
     context = f"Контекст диалога:\n{history_text}\n\nНовый вопрос: {text}"
     messages = [
-        LLMMessage(role="system", content=load_prompt(prompt_name)),
+        LLMMessage(role="system", content=system),
         LLMMessage(role="user", content=context),
     ]
     return await get_llm().complete(messages, temperature=0.4)

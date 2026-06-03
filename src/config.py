@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     groq_api_key: str = ""
     openrouter_api_key: str = ""
 
+    mem0_api_key: str = ""
+
     llm_model: str = "deepseek/deepseek-chat"
     llm_fallback_model: str = "anthropic/claude-3.5-haiku"
 

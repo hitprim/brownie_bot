@@ -15,8 +15,11 @@ async def diy_node(state: AgentState) -> AgentState:
         f"Срочность: {state.get('urgency', 'medium')}\n"
         f"Проблема: {state['text']}"
     )
+    system = load_prompt("home/diy")
+    if state.get("memory_facts"):
+        system = f"{system}\n\n{state['memory_facts']}"
     messages = [
-        LLMMessage(role="system", content=load_prompt("home/diy")),
+        LLMMessage(role="system", content=system),
         LLMMessage(role="user", content=context),
     ]
     text = await llm.complete(messages, temperature=0.4)

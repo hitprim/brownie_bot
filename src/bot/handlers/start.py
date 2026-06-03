@@ -6,6 +6,7 @@ from aiogram.types import Message
 from src.bot.states import ConversationStates
 from src.db.models import User
 from src.db.session import async_session_factory
+from src.memory import get_memory
 from src.services.conversation_service import ConversationService
 
 router = Router(name="start")
@@ -26,7 +27,8 @@ HELP = (
     "Команды:\n"
     "/start — начать заново\n"
     "/help — эта справка\n"
-    "/reset — сбросить текущий диалог"
+    "/reset — сбросить текущий диалог\n"
+    "/forget — забыть всё, что я о вас запомнил"
 )
 
 
@@ -49,3 +51,13 @@ async def cmd_reset(message: Message, state: FSMContext, user: User) -> None:
         await ConversationService(session).reset(user.id)
     await state.set_state(ConversationStates.idle)
     await message.answer("Начнём с чистого листа. Что у вас?")
+
+
+@router.message(Command("forget"))
+async def cmd_forget(message: Message, user: User) -> None:
+    memory = get_memory()
+    if memory is None:
+        await message.answer("Память сейчас не используется — забывать нечего 🙂")
+        return
+    await memory.forget(str(user.telegram_id))
+    await message.answer("Готово — всё, что я о вас помнил, удалено.")

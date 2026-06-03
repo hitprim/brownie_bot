@@ -7,6 +7,7 @@ class AgentState(TypedDict, total=False):
     text: str
     user_prefs: dict[str, Any]
     history: list[dict[str, str]]
+    memory_facts: str  # факты о пользователе из mem0 для подмешивания в промпт
 
     domain: str  # "cooking" | "home" | "unclear"
     confidence: float
